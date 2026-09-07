@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
+import http.client
 import json
 import os
 import sys
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 from pathlib import Path
 
-API = "https://api.github.com/advisories"
+API_HOST = "api.github.com"
+API_PATH = "/advisories"
 SEVERITIES = ("critical", "high")
 BATCH_SIZE = 20
 RETRIES = 3
@@ -38,7 +38,7 @@ def request_advisories(packages: list[str], severity: str) -> list[dict]:
         ("per_page", "100"),
     ]
     query.extend(("affects[]", package) for package in packages)
-    url = API + "?" + urllib.parse.urlencode(query)
+    path = API_PATH + "?" + urllib.parse.urlencode(query)
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "reruna-dependency-audit",
@@ -49,14 +49,27 @@ def request_advisories(packages: list[str], severity: str) -> list[dict]:
         headers["Authorization"] = f"Bearer {token}"
 
     for attempt in range(1, RETRIES + 1):
+        connection = http.client.HTTPSConnection(API_HOST, timeout=30)
         try:
-            request = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(request, timeout=30) as response:
-                return json.load(response)
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as error:
+            connection.request("GET", path, headers=headers)
+            response = connection.getresponse()
+            body = response.read()
+            if response.status != 200:
+                detail = body[:500].decode("utf-8", errors="replace")
+                raise RuntimeError(
+                    f"GitHub Advisory Database returned HTTP {response.status}: {detail}"
+                )
+            payload = json.loads(body)
+            if not isinstance(payload, list):
+                raise RuntimeError("GitHub Advisory Database returned an unexpected response")
+            return payload
+        except (OSError, http.client.HTTPException, json.JSONDecodeError, RuntimeError) as error:
             if attempt == RETRIES:
                 raise SystemExit(f"GitHub Advisory Database query failed: {error}")
             time.sleep(attempt * 2)
+        finally:
+            connection.close()
+
     raise AssertionError("unreachable")
 
 
