@@ -51,3 +51,59 @@ Run the normal 3 warm-ups plus at least 10 measured runs on the new build. Compa
 - immediate-AGAIN response and failure note.
 
 Do not mark the three R1 tuning tasks complete until the larger before/after evidence supports the new values.
+
+
+## First validation sample
+
+Three fresh completed runs were captured from the balance-pass build at commit `7be15aef0604ab4ff5b975478d0b1a5b794c00a8`.
+
+| Turns | Score | Sparks | Rewarded Syncs | Reruns | Max Combo | Resonance activations |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 409 | 171,400 | 220 | 27 | 51 | 108 | 3 |
+| 394 | 136,100 | 72 | 138 | 49 | 29 | 14 |
+| 390 | 141,850 | 65 | 135 | 48 | 17 | 14 |
+
+Normalized per 100 turns:
+
+| Run | Sparks / 100 | Syncs / 100 | Resonance / 100 | Score / 100 |
+| --- | ---: | ---: | ---: | ---: |
+| 409 turns | 53.8 | 6.6 | 0.7 | 41,907 |
+| 394 turns | 18.3 | 35.0 | 3.6 | 34,543 |
+| 390 turns | 16.7 | 34.6 | 3.6 | 36,372 |
+
+### What improved
+
+The original 390-turn exploit run had 342 Sync events, 29 Resonance activations, and 853,400 score. The two new Sync-heavy runs at nearly the same length average 136.5 rewarded Syncs, 14 Resonance activations, and 138,975 score.
+
+Relative to the exploit case, that is about:
+
+- 60% fewer rewarded Syncs;
+- 52% fewer Resonance activations;
+- 84% less score runaway.
+
+The long run therefore survives without the former every-turn overlap reward loop.
+
+### Multiple strategies are now competitive
+
+The 409-turn run is Spark/Combo-heavy: 220 Sparks, 27 Syncs, Combo 108, three Resonance activations, score 171,400.
+
+The 390–394-turn runs are Sync-heavy: 65–72 Sparks, 135–138 rewarded Syncs, Combo 17–29, fourteen Resonance activations, scores 136,100–141,850.
+
+Both shapes reach roughly the same survival range and broadly comparable scores. That is a better sign than the pre-pass state, where one overlap strategy produced an order-of-magnitude score advantage.
+
+### Remaining concern: survival length is tightly clustered
+
+All three validation runs end between 390 and 409 turns despite very different collection/Sync profiles. The 19-turn spread is small enough to suggest that the late Entropy ramp may be acting as a relatively deterministic ceiling.
+
+This is not yet a reason to retune again. Three runs are too few, and the player may also be converging on a consistent skill level. The larger measured batch should determine whether survival remains narrowly capped or develops meaningful variance.
+
+### Decision
+
+Do not change balance again from this three-run sample.
+
+Continue the existing protocol until at least 10 measured post-pass runs exist. The next decision should focus on:
+
+- whether the 390–410-turn cluster persists;
+- whether Spark-heavy and Sync-heavy routes remain similarly viable;
+- whether score variance feels earned rather than route-exploit driven;
+- whether immediate restart remains compelling.
