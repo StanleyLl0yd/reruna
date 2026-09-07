@@ -21,7 +21,8 @@ The engine owns all rules and state transitions:
 - Entropy;
 - scoring;
 - game-over state;
-- deterministic random state.
+- deterministic random state;
+- deterministic run-summary counters used by R1 playtests.
 
 The engine has no Android dependency. Its central operation is conceptually:
 
@@ -47,6 +48,8 @@ The UI:
 - maps engine event metadata to fixed sound/haptic cues;
 - displays first-run guidance and paused state;
 - requests restart.
+
+Run-summary counters are engine-owned derived state and remain local to the active run; they are not analytics and are not transmitted.
 
 The UI must not calculate scoring, movement results, Entropy, Reruns or Syncs. Presentation feedback may derive visuals from engine-owned event metadata, but animation clocks, audio playback, haptics, and lifecycle state never feed back into the engine.
 
