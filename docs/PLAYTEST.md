@@ -10,7 +10,7 @@ The game-over screen exposes deterministic run metrics:
 
 - turns survived;
 - Sparks collected;
-- Sync events;
+- rewarded fresh-convergence Sync events;
 - total Reruns created;
 - maximum Combo;
 - Resonance activations.
