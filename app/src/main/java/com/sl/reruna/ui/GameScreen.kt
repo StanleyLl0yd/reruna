@@ -1,11 +1,14 @@
 package com.sl.reruna.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,9 +23,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,9 +63,40 @@ import kotlin.math.min
 @Composable
 fun GameScreen(
     state: GameState,
+    paused: Boolean,
+    showTutorial: Boolean,
     onMove: (Direction) -> Unit,
     onRestart: () -> Unit,
+    onDismissTutorial: () -> Unit,
 ) {
+    val rerunPulse = remember { Animatable(0f) }
+    val syncPulse = remember { Animatable(0f) }
+    val resonancePulse = remember { Animatable(0f) }
+
+    LaunchedEffect(state.turn, state.rerunCreatedThisTurn) {
+        if (state.rerunCreatedThisTurn) {
+            rerunPulse.snapTo(1f)
+            rerunPulse.animateTo(0f, tween(durationMillis = 480))
+        }
+    }
+    LaunchedEffect(state.turn, state.lastSyncCount) {
+        if (state.lastSyncCount >= 2) {
+            syncPulse.snapTo(1f)
+            syncPulse.animateTo(0f, tween(durationMillis = 620))
+        }
+    }
+    LaunchedEffect(state.turn, state.resonanceStartedThisTurn) {
+        if (state.resonanceStartedThisTurn) {
+            resonancePulse.snapTo(1f)
+            resonancePulse.animateTo(0f, tween(durationMillis = 760))
+        }
+    }
+
+    GameFeedback(
+        state = state,
+        enabled = !paused,
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -81,13 +118,30 @@ fun GameScreen(
 
             GameBoard(
                 state = state,
+                enabled = !paused,
+                rerunPulse = rerunPulse.value,
+                syncPulse = syncPulse.value,
+                resonancePulse = resonancePulse.value,
                 onMove = onMove,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
             )
 
-            Spacer(Modifier.height(8.dp))
+            if (showTutorial && !state.gameOver) {
+                Spacer(Modifier.height(6.dp))
+                TutorialHint(
+                    state = state,
+                    onDismiss = onDismissTutorial,
+                )
+            }
+
+            Spacer(Modifier.height(6.dp))
+            DirectionPad(
+                enabled = !paused && !state.gameOver,
+                onMove = onMove,
+            )
+            Spacer(Modifier.height(6.dp))
             Footer(state)
         }
 
@@ -95,6 +149,10 @@ fun GameScreen(
             GameOverOverlay(
                 state = state,
                 onRestart = onRestart,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        } else if (paused) {
+            PauseOverlay(
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -224,12 +282,14 @@ private fun EventLine(state: GameState) {
     val text = when {
         state.resonanceStartedThisTurn -> "RESONANCE"
         state.lastSyncCount >= 2 -> "SYNC ×" + state.lastSyncCount
-        state.rerunCreatedThisTurn -> "RERUN"
+        state.rerunCreatedThisTurn -> "RERUN ONLINE"
+        state.sparksCollectedThisTurn > 0 -> "SPARK ×" + state.sparksCollectedThisTurn
         else -> ""
     }
     val color = when {
         state.resonanceStartedThisTurn -> RerunaViolet
         state.lastSyncCount >= 2 -> RerunaCyan
+        state.rerunCreatedThisTurn -> RerunaViolet
         else -> RerunaMuted
     }
 
@@ -247,6 +307,10 @@ private fun EventLine(state: GameState) {
 @Composable
 private fun GameBoard(
     state: GameState,
+    enabled: Boolean,
+    rerunPulse: Float,
+    syncPulse: Float,
+    resonancePulse: Float,
     onMove: (Direction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -265,10 +329,11 @@ private fun GameBoard(
     Canvas(
         modifier = modifier
             .semantics {
-                contentDescription = "RERUNA board. Swipe up, down, left, or right to move."
+                contentDescription =
+                    "RERUNA board. Swipe up, down, left, or right, or use the direction buttons."
             }
-            .pointerInput(state.gameOver, thresholdPx) {
-                if (state.gameOver) return@pointerInput
+            .pointerInput(enabled, state.gameOver, thresholdPx) {
+                if (!enabled || state.gameOver) return@pointerInput
                 var drag = Offset.Zero
                 detectDragGestures(
                     onDragStart = { drag = Offset.Zero },
@@ -301,12 +366,18 @@ private fun GameBoard(
             x = (size.width - boardWidth) / 2f,
             y = (size.height - boardHeight) / 2f,
         )
+        val boardSize = Size(boardWidth, boardHeight)
+        val boardCorner = CornerRadius(cellSize * 0.2f)
 
         drawRoundRect(
-            color = RerunaSurface,
+            color = if (state.resonanceTurnsRemaining > 0) {
+                RerunaViolet.copy(alpha = 0.09f)
+            } else {
+                RerunaSurface
+            },
             topLeft = origin,
-            size = Size(boardWidth, boardHeight),
-            cornerRadius = CornerRadius(cellSize * 0.2f),
+            size = boardSize,
+            cornerRadius = boardCorner,
         )
 
         for (x in 0..GameRules.GRID_WIDTH) {
@@ -377,10 +448,26 @@ private fun GameBoard(
             )
         }
 
+        if (state.lastSyncCount >= 2) {
+            state.lastSyncCells.forEach { syncCell ->
+                drawCircle(
+                    color = RerunaCyan.copy(alpha = 0.30f + syncPulse * 0.55f),
+                    radius = cellSize * (0.28f + syncPulse * 0.14f),
+                    center = cellCenter(syncCell, origin, cellSize),
+                    style = Stroke(width = cellSize * 0.055f),
+                )
+            }
+        }
+
         val playerCenter = cellCenter(state.player, origin, cellSize)
+        val resonanceBoost = if (state.resonanceTurnsRemaining > 0) 0.08f else 0f
         drawCircle(
-            color = RerunaCyan.copy(alpha = 0.16f),
-            radius = cellSize * 0.34f,
+            color = if (state.resonanceTurnsRemaining > 0) {
+                RerunaViolet.copy(alpha = 0.22f + resonancePulse * 0.18f)
+            } else {
+                RerunaCyan.copy(alpha = 0.16f)
+            },
+            radius = cellSize * (0.34f + resonanceBoost),
             center = playerCenter,
         )
         drawCircle(
@@ -389,11 +476,31 @@ private fun GameBoard(
             center = playerCenter,
         )
         drawCircle(
-            color = RerunaCyan,
+            color = if (state.resonanceTurnsRemaining > 0) RerunaViolet else RerunaCyan,
             radius = cellSize * 0.13f,
             center = playerCenter,
             style = Stroke(width = cellSize * 0.035f),
         )
+
+        if (state.resonanceTurnsRemaining > 0) {
+            drawRoundRect(
+                color = RerunaViolet.copy(alpha = 0.34f + resonancePulse * 0.40f),
+                topLeft = origin,
+                size = boardSize,
+                cornerRadius = boardCorner,
+                style = Stroke(width = cellSize * 0.04f),
+            )
+        }
+
+        if (rerunPulse > 0f) {
+            drawRoundRect(
+                color = RerunaViolet.copy(alpha = rerunPulse * 0.72f),
+                topLeft = origin,
+                size = boardSize,
+                cornerRadius = boardCorner,
+                style = Stroke(width = cellSize * (0.03f + rerunPulse * 0.04f)),
+            )
+        }
     }
 }
 
@@ -405,6 +512,92 @@ private fun cellCenter(
     x = origin.x + (cell.x + 0.5f) * cellSize,
     y = origin.y + (cell.y + 0.5f) * cellSize,
 )
+
+@Composable
+private fun TutorialHint(
+    state: GameState,
+    onDismiss: () -> Unit,
+) {
+    val text = when {
+        state.lastSyncCount >= 2 ->
+            "SYNC: overlap your selves to score, cut Entropy, and charge Resonance."
+        state.reruns.isNotEmpty() ->
+            "Your Rerun repeats its 8 moves. Shape the next route to meet it on purpose."
+        state.turn == 0 ->
+            "Swipe or tap a direction. Time advances only when you move."
+        else ->
+            "Your first 8 moves are being recorded. The route will become your first Rerun."
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = RerunaSurface,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = text,
+                modifier = Modifier.weight(1f),
+                color = RerunaMuted,
+                fontSize = 10.sp,
+                lineHeight = 13.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "GOT IT",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DirectionPad(
+    enabled: Boolean,
+    onMove: (Direction) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DirectionButton("←", "Move left", Direction.LEFT, enabled, onMove)
+        DirectionButton("↑", "Move up", Direction.UP, enabled, onMove)
+        DirectionButton("↓", "Move down", Direction.DOWN, enabled, onMove)
+        DirectionButton("→", "Move right", Direction.RIGHT, enabled, onMove)
+    }
+}
+
+@Composable
+private fun DirectionButton(
+    label: String,
+    description: String,
+    direction: Direction,
+    enabled: Boolean,
+    onMove: (Direction) -> Unit,
+) {
+    OutlinedButton(
+        onClick = { onMove(direction) },
+        enabled = enabled,
+        modifier = Modifier
+            .size(44.dp)
+            .semantics {
+                contentDescription = description
+            },
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Text(
+            text = label,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
 
 @Composable
 private fun Footer(state: GameState) {
@@ -420,7 +613,7 @@ private fun Footer(state: GameState) {
             fontFamily = FontFamily.Monospace,
         )
         Text(
-            text = if (state.combo > 0) "COMBO ×" + state.combo else "SWIPE TO MOVE",
+            text = if (state.combo > 0) "COMBO ×" + state.combo else "SWIPE OR TAP",
             color = if (state.combo > 0) RerunaCyan else RerunaMuted,
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
@@ -431,6 +624,28 @@ private fun Footer(state: GameState) {
             color = RerunaMuted,
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
+        )
+    }
+}
+
+@Composable
+private fun PauseOverlay(
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.padding(28.dp),
+        color = RerunaSurface.copy(alpha = 0.98f),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 12.dp,
+    ) {
+        Text(
+            text = "PAUSED",
+            modifier = Modifier.padding(horizontal = 34.dp, vertical = 22.dp),
+            color = RerunaText,
+            fontSize = 14.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
         )
     }
 }

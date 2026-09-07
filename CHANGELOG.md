@@ -2,6 +2,22 @@
 
 All notable milestone changes are recorded here.
 
+## R1 — Feel — Unreleased
+
+### Added
+
+- Engine-owned per-turn Spark and Sync-location event metadata for deterministic presentation feedback.
+- Sync location pulse, Rerun transition pulse, and active Resonance board treatment.
+- Fixed event-to-tone mapping with event haptics, isolated from game rules.
+- Lifecycle-aware pause/input suppression.
+- Lightweight first-run in-game tutorial with persistent dismissal.
+- Four accessible on-screen direction buttons that submit the same Direction commands as swipes.
+
+### Changed
+
+- Gameplay tuning constants are centralized in GameRules without claiming playtest-driven value changes.
+- R1 remains open pending real-play tuning, device-size/refresh-rate testing, and frame-time/allocation profiling.
+
 ## R0 — Foundation — 2026-09-07
 
 R0 establishes the first complete playable RERUNA loop on Android.

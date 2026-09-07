@@ -41,11 +41,14 @@ The UI:
 
 - renders state;
 - renders the board with a Compose Canvas;
-- converts a swipe into one Direction;
+- converts a swipe or accessibility direction-button press into the same Direction command;
 - displays game events and meters;
+- animates deterministic event metadata such as Sync locations and Rerun creation;
+- maps engine event metadata to fixed sound/haptic cues;
+- displays first-run guidance and paused state;
 - requests restart.
 
-The UI must not calculate scoring, movement results, Entropy, Reruns or Syncs.
+The UI must not calculate scoring, movement results, Entropy, Reruns or Syncs. Presentation feedback may derive visuals from engine-owned event metadata, but animation clocks, audio playback, haptics, and lifecycle state never feed back into the engine.
 
 ## Determinism
 

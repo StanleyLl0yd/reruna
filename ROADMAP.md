@@ -29,19 +29,21 @@ Exit criterion: a clean build launches into a complete playable loop.
 
 ## R1 — Feel
 
+Status: **In development.**
+
 Goal: make the basic loop genuinely hard to put down before adding metagame systems.
 
 - [ ] Tune Entropy curve from real play sessions
 - [ ] Tune Spark spawn pressure
 - [ ] Tune scoring and Combo decay
-- [ ] Improve Sync readability
-- [ ] Add RERUN transition animation
-- [ ] Add Resonance audiovisual state
-- [ ] Add subtle haptics
-- [ ] Add deterministic sound layer
-- [ ] Add pause/background handling
-- [ ] Add lightweight first-run tutorial inside gameplay
-- [ ] Add accessibility alternatives to swipe input
+- [x] Improve Sync readability
+- [x] Add RERUN transition animation
+- [x] Add Resonance audiovisual state
+- [x] Add subtle haptics
+- [x] Add deterministic sound layer
+- [x] Add pause/background handling
+- [x] Add lightweight first-run tutorial inside gameplay
+- [x] Add accessibility alternatives to swipe input
 - [ ] Device-size and refresh-rate testing
 - [ ] Frame-time and allocation profiling
 

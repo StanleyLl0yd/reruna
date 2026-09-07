@@ -22,7 +22,7 @@ The ideal emotional sequence is:
 
 - Board: 7×9.
 - Topology: wraps horizontally and vertically.
-- Input: four directional swipes.
+- Input: four directional swipes, with four on-screen direction buttons as an accessibility alternative.
 - Time: advances once per player move.
 - Recording: exactly 8 moves.
 - Active Reruns: maximum 6.
@@ -36,7 +36,7 @@ The ideal emotional sequence is:
 
 ## Current tuning values
 
-These values are prototypes, not promises.
+These values are prototypes, not promises. R1 centralizes them in GameRules so playtest changes remain explicit and reviewable; this tranche does not claim playtest-driven tuning yet.
 
 | Parameter | Initial value |
 | --- | ---: |
@@ -62,6 +62,12 @@ More entities do not automatically mean more fun. Six Reruns is a deliberate rea
 ### Failure should be legible
 
 The player should usually understand which weak route or missed collection caused Entropy to escape control.
+
+### Feedback should explain the machine
+
+Sync locations, Rerun creation, Spark collection, Resonance activation, and game over use fixed visual/audio/haptic cues. These cues are presentation only and must never alter timing or authoritative game state.
+
+The first-run tutorial stays inside gameplay and can be dismissed permanently. It explains movement, recording, Reruns, and Sync without adding a separate tutorial mode.
 
 ### Restarts should be frictionless
 
