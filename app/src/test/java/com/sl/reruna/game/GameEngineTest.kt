@@ -90,13 +90,13 @@ class GameEngineTest {
     }
 
     @Test
-    fun matchingClosedRouteCreatesSync() {
-        var state = closedRouteState(seed = 19L)
+    fun convergingParticipantsCreateSync() {
+        var state = syncTestState(seed = 19L)
 
         state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
 
         assertEquals(2, state.lastSyncCount)
-        assertEquals(setOf(state.player), state.lastSyncCells)
+        assertEquals(setOf(Cell(1, 0)), state.lastSyncCells)
         assertEquals(1, state.syncEvents)
         assertEquals(24, state.resonance)
         assertTrue(state.score >= 600)
@@ -104,33 +104,33 @@ class GameEngineTest {
 
     @Test
     fun sustainedOverlapDoesNotFarmSyncRewardsEveryTurn() {
-        var state = closedRouteState(seed = 53L)
+        var state = syncTestState(seed = 53L)
 
         state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
-        val scoreAfterConvergence = state.score
+        val syncEventsAfterConvergence = state.syncEvents
         val resonanceAfterConvergence = state.resonance
 
-        state = GameEngine.step(state.copy(entropy = 0), Direction.LEFT)
+        state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
 
-        assertEquals(1, state.syncEvents)
+        assertEquals(syncEventsAfterConvergence, state.syncEvents)
         assertEquals(0, state.lastSyncCount)
         assertEquals(resonanceAfterConvergence, state.resonance)
-        assertTrue(state.score >= scoreAfterConvergence)
     }
 
     @Test
     fun separationAllowsSameParticipantsToSyncAgain() {
-        var state = closedRouteState(seed = 59L)
+        var state = syncTestState(seed = 59L)
 
         state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
-        state = GameEngine.step(state.copy(entropy = 0), Direction.UP)
-        state = GameEngine.step(state.copy(entropy = 0), Direction.LEFT)
-
         assertEquals(1, state.syncEvents)
+
+        state = GameEngine.step(state.copy(entropy = 0), Direction.UP)
+        assertEquals(0, state.lastSyncCount)
 
         state = GameEngine.step(state.copy(entropy = 0), Direction.DOWN)
 
-        assertTrue(state.syncEvents >= 1)
+        assertEquals(2, state.syncEvents)
+        assertEquals(2, state.lastSyncCount)
     }
 
     @Test
@@ -183,22 +183,30 @@ class GameEngineTest {
         assertFalse(next.rerunCreatedThisTurn)
     }
 
-    private fun closedRouteState(seed: Long): GameState {
-        var state = GameEngine.newGame(seed = seed)
-        val closedRoute = listOf(
-            Direction.RIGHT,
-            Direction.LEFT,
-            Direction.RIGHT,
-            Direction.LEFT,
-            Direction.RIGHT,
-            Direction.LEFT,
-            Direction.RIGHT,
-            Direction.LEFT,
+    private fun syncTestState(seed: Long): GameState {
+        val state = GameEngine.newGame(seed = seed)
+        val rerun = Rerun(
+            id = 1,
+            origin = Cell(2, 0),
+            moves = listOf(
+                Direction.LEFT,
+                Direction.RIGHT,
+                Direction.LEFT,
+                Direction.RIGHT,
+                Direction.LEFT,
+                Direction.RIGHT,
+                Direction.LEFT,
+                Direction.RIGHT,
+            ),
+            position = Cell(2, 0),
         )
-
-        closedRoute.forEach { direction ->
-            state = GameEngine.step(state.copy(entropy = 0), direction)
-        }
-        return state
+        return state.copy(
+            player = Cell(0, 0),
+            reruns = listOf(rerun),
+            recording = emptyList(),
+            recordingOrigin = Cell(0, 0),
+            sparks = emptySet(),
+            activeSyncGroups = emptySet(),
+        )
     }
 }
