@@ -8,9 +8,9 @@ RERUNA is currently pre-alpha and has no published production release.
 | --- | --- |
 | Current `main` during pre-alpha | Yes |
 | Historical commits | No |
-| Published releases | None yet |
+| R0 pre-alpha milestone release | Yes |
 
-Until the first public release, security fixes land on `main`. When versioned releases begin, the project is expected to support the latest release unless a release note states otherwise.
+Security fixes land on `main`. During pre-alpha, the latest milestone release is supported alongside current `main`; older milestone snapshots are not.
 
 ## Reporting a vulnerability
 
@@ -76,7 +76,7 @@ Repository and CI controls include:
 
 ## Release security
 
-There is no production release pipeline yet.
+R0 uses a one-time pre-alpha development release path with development signing, checksums, and artifact provenance. There is still no production/store release pipeline.
 
 Before the first production release, release hardening must explicitly cover:
 

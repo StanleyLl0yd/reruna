@@ -4,6 +4,8 @@ The roadmap is milestone-based. A milestone closes only after its exit criteria 
 
 ## R0 — Foundation
 
+Status: **Released as R0 on 2026-09-07.**
+
 Goal: prove the game can exist as a small, deterministic, testable Android project.
 
 - [x] Android project baseline
