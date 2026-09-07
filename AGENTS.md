@@ -243,6 +243,7 @@ Security controls are part of the repository contract, not optional CI decoratio
 - Keep `security-events: write` limited to jobs that upload code-scanning results.
 - Do not grant `id-token: write`, `contents: write`, `pull-requests: write`, or similar write scopes unless a concrete job requires them.
 - Keep Android verification, CodeQL, Semgrep, Gitleaks, and the resolved Maven Dependency Audit healthy and merge-blocking once repository rulesets are configured.
+- Protected `main` requires verified signed commits. Topic-branch commits may be unsigned, but the final squash commit entering `main` must be GitHub-verified.
 - Maintain Dependabot coverage for every package ecosystem actually used by the repository, including GitHub Actions. Audit resolved Maven dependencies against the GitHub Advisory Database.
 - Run `python3 scripts/verify_ci_supply_chain.py` whenever `.github/workflows/**` or `.github/actions/**` changes.
 - Never commit signing keys, keystores, passwords, API keys, tokens, `.env` files, `local.properties`, service-account credentials, or generated secrets.
