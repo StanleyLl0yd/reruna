@@ -46,6 +46,7 @@ R0 established the first playable vertical slice. The current R1 work keeps the 
 - deterministic event-to-sound cues and event haptics;
 - lifecycle-aware pause/input suppression while the activity is paused;
 - Compose-rendered game board;
+- compact game-over run statistics for balance playtests;
 - instant run restart;
 - unit tests for the core rules and deterministic presentation events.
 
@@ -80,6 +81,7 @@ The CI workflow installs API 37 and runs unit tests, lint and a debug build.
 - [Changelog](CHANGELOG.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Game design](docs/GAME_DESIGN.md)
+- [R1 playtest protocol](docs/PLAYTEST.md)
 - [Branding](docs/BRANDING.md)
 - [Contributor/agent rules](AGENTS.md)
 - [Audit/refactor protocol](docs/agent/AUDIT_REFACTOR.md)
