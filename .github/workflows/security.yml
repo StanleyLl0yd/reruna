@@ -78,7 +78,7 @@ jobs:
         run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
 
       - name: Prepare Gradle dependencies
-        run: gradle --no-daemon :app:dependencies --stacktrace
+        run: ./gradlew --no-daemon :app:dependencies --stacktrace
 
       - name: Run Qodana
         uses: JetBrains/qodana-action@10be11607eb323a180e2b76b26c9c5cdceac3e77 # v2026.2.1
