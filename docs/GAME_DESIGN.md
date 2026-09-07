@@ -28,8 +28,9 @@ The ideal emotional sequence is:
 - Active Reruns: maximum 6.
 - Reruns replay synchronously.
 - Sparks can be collected by the player or any Rerun.
-- A Sync occurs when two or more active selves occupy one cell after a move.
-- Syncs award score, reduce Entropy and charge Resonance.
+- A rewarded Sync occurs when two or more active selves newly converge on one cell after a move.
+- Staying overlapped remains visible but does not repeatedly award Sync rewards until that participant group separates and meets again.
+- Rewarded Syncs award score, reduce Entropy and charge Resonance.
 - Resonance lasts 8 turns and doubles scoring while active.
 - Entropy reaching 100 ends the run.
 - Missing Sparks long enough breaks Combo.
@@ -40,17 +41,19 @@ These values are prototypes, not promises. R1 centralizes them in GameRules so p
 
 | Parameter | Initial value |
 | --- | ---: |
-| Starting Sparks | 3 |
+| Starting Sparks | 4 |
 | Maximum Sparks | 4 |
 | Recording length | 8 turns |
 | Maximum Reruns | 6 |
-| Starting Entropy gain | 2/turn |
+| Starting Entropy gain | 1/turn |
+| Entropy time ramp | +1 every 96 turns |
+| Entropy Rerun ramp | +1 per 4 active Reruns |
 | Spark Entropy reduction | 7 |
 | Sync Entropy reduction | 4 × participants |
 | Resonance charge | 12 × Sync participants |
 | Resonance duration | 8 turns |
 | Spark base score | 100 |
-| Sync base score | 250 × participants² |
+| Sync base score | 150 × participants² |
 | Combo grace | 4 turns |
 
 ## Design constraints
