@@ -1,10 +1,16 @@
-# RERUNA
+<p align="center">
+  <img src="assets/branding/reruna-icon.png" alt="RERUNA app icon" width="180" height="180">
+</p>
 
-> **Build your past.**
+<h1 align="center">RERUNA</h1>
+
+<p align="center"><strong>Build your past.</strong></p>
 
 RERUNA is a minimalist strategy arcade game where every move becomes part of a repeating past. You do not run away from your previous selves — you build a system out of them.
 
 The project is **Android-first**, while the game rules are intentionally kept platform-independent so the core can later move to other platforms without being redesigned.
+
+The canonical RERUNA icon and visual identity are documented in [Branding](docs/BRANDING.md). The original approved PNG is preserved unchanged in `assets/branding/reruna-icon.png`.
 
 ## Core loop
 
@@ -69,6 +75,7 @@ The CI workflow installs API 37 and runs unit tests, lint and a debug build.
 - [Roadmap](ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Game design](docs/GAME_DESIGN.md)
+- [Branding](docs/BRANDING.md)
 - [Contributor/agent rules](AGENTS.md)
 - [Audit/refactor protocol](docs/agent/AUDIT_REFACTOR.md)
 
