@@ -2,6 +2,7 @@
 import http.client
 import json
 import os
+import ssl
 import sys
 import time
 import urllib.parse
@@ -49,7 +50,12 @@ def request_advisories(packages: list[str], severity: str) -> list[dict]:
         headers["Authorization"] = f"Bearer {token}"
 
     for attempt in range(1, RETRIES + 1):
-        connection = http.client.HTTPSConnection(API_HOST, timeout=30)
+        tls_context = ssl.create_default_context()
+        connection = http.client.HTTPSConnection(  # nosemgrep: python.lang.security.audit.httpsconnection-detected.httpsconnection-detected
+            API_HOST,
+            timeout=30,
+            context=tls_context,
+        )
         try:
             connection.request("GET", path, headers=headers)
             response = connection.getresponse()
