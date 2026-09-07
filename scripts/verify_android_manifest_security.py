@@ -1,44 +1,42 @@
 #!/usr/bin/env python3
-import xml.etree.ElementTree as ET
+import re
 from pathlib import Path
 
-ANDROID = "{http://schemas.android.com/apk/res/android}"
 MANIFEST = Path("app/src/main/AndroidManifest.xml")
-ALLOWED_EXPORTED = {".MainActivity"}
+ALLOWED_EXPORTED = {("activity", ".MainActivity")}
+COMPONENT = re.compile(r"<(activity|activity-alias|service|receiver|provider)\b([^>]*)>", re.DOTALL)
+ATTRIBUTE = re.compile(r'android:([A-Za-z0-9_]+)="([^"]*)"')
 
-root = ET.parse(MANIFEST).getroot()
+content = MANIFEST.read_text(encoding="utf-8")
 errors = []
 
-permissions = [node.get(ANDROID + "name", "") for node in root.findall("uses-permission")]
-if permissions:
-    errors.append("Android permissions are not allowed by the current offline baseline: " + ", ".join(sorted(permissions)))
+if re.search(r"<uses-permission\b", content):
+    errors.append("Android permissions are not allowed by the current offline baseline")
 
-application = root.find("application")
-if application is None:
-    errors.append("Missing <application> element")
-else:
-    if application.get(ANDROID + "usesCleartextTraffic") != "false":
-        errors.append('android:usesCleartextTraffic must be explicitly "false"')
-    if application.get(ANDROID + "debuggable") == "true":
-        errors.append("android:debuggable must not be enabled in the manifest")
+if 'android:usesCleartextTraffic="false"' not in content:
+    errors.append('android:usesCleartextTraffic must be explicitly "false"')
 
-    exported = []
-    for tag in ("activity", "activity-alias", "service", "receiver", "provider"):
-        for node in application.findall(tag):
-            if node.get(ANDROID + "exported") == "true":
-                exported.append((tag, node.get(ANDROID + "name", "")))
+if 'android:debuggable="true"' in content:
+    errors.append("android:debuggable must not be enabled in the manifest")
 
-    unexpected = [
-        f"{tag}:{name}"
-        for tag, name in exported
-        if tag != "activity" or name not in ALLOWED_EXPORTED
-    ]
-    if unexpected:
-        errors.append("Unexpected exported Android components: " + ", ".join(sorted(unexpected)))
+exported = []
+for tag, raw_attributes in COMPONENT.findall(content):
+    attributes = dict(ATTRIBUTE.findall(raw_attributes))
+    if attributes.get("exported") == "true":
+        exported.append((tag, attributes.get("name", "")))
 
-    launcher = [node for node in application.findall("activity") if node.get(ANDROID + "name") == ".MainActivity"]
-    if len(launcher) != 1 or launcher[0].get(ANDROID + "exported") != "true":
-        errors.append(".MainActivity must be the single exported launcher activity")
+unexpected = sorted(set(exported) - ALLOWED_EXPORTED)
+if unexpected:
+    errors.append(
+        "Unexpected exported Android components: "
+        + ", ".join(f"{tag}:{name}" for tag, name in unexpected)
+    )
+
+if exported.count(("activity", ".MainActivity")) != 1:
+    errors.append(".MainActivity must be the single exported launcher activity")
+
+if "android.intent.action.MAIN" not in content or "android.intent.category.LAUNCHER" not in content:
+    errors.append(".MainActivity must retain the MAIN/LAUNCHER intent filter")
 
 if errors:
     raise SystemExit("\n".join(errors))
