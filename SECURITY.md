@@ -39,7 +39,7 @@ In scope:
 - Android application code and packaged resources;
 - deterministic game-state and persistence integrity where a bug crosses a trust or data boundary;
 - dependency and build-toolchain risks introduced by this repository;
-- GitHub Actions, CI/CD, code scanning, secret scanning, dependency review, and artifact integrity;
+- GitHub Actions, CI/CD, code scanning, secret scanning, dependency auditing, and artifact integrity;
 - Android manifest, exported components, permissions, local data handling, and unintended network exposure;
 - repository-secret exposure or supply-chain weaknesses caused by repository configuration.
 
@@ -67,7 +67,7 @@ Repository and CI controls include:
 - CodeQL for Java/Kotlin;
 - Semgrep security and secret rules;
 - Gitleaks full-history secret scanning;
-- Dependency Review on pull requests;
+- resolved Gradle/Maven dependency auditing against the GitHub Advisory Database;
 - Dependabot for Gradle and GitHub Actions;
 - least-privilege workflow permissions;
 - full-SHA-pinned external GitHub Actions;

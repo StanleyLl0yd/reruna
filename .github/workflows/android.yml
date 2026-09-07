@@ -73,30 +73,39 @@ jobs:
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/bundle/debug/app-debug.aab
 
-  dependency-review:
-    name: Dependency Review
-    if: github.event_name == 'pull_request'
+  dependency-audit:
+    name: Dependency Audit
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
 
     steps:
-      - name: Review dependency changes
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fail-on-severity: high
-          vulnerability-check: true
-          license-check: true
-          comment-summary-in-pr: never
-          retry-on-snapshot-warnings: true
-          retry-on-snapshot-warnings-timeout: 120
-          show-patched-versions: true
+          persist-credentials: false
+
+      - name: Set up Android build environment
+        uses: ./.github/actions/android-gradle-setup
+        with:
+          gradle-cache-read-only: true
+
+      - name: Install Android API 37.0
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+
+      - name: Resolve Maven dependencies
+        run: gradle --no-daemon -I scripts/dependency-audit.gradle :app:writeDependencyCoordinates --stacktrace
+
+      - name: Audit resolved dependencies
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/audit_maven_dependencies.py build/dependency-coordinates.txt
 
   verify:
     name: Verify
     if: always()
-    needs: [build, dependency-review]
+    needs: [build, dependency-audit]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -105,13 +114,8 @@ jobs:
       - name: Enforce verification results
         env:
           BUILD_RESULT: ${{ needs.build.result }}
-          DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
-          EVENT_NAME: ${{ github.event_name }}
+          DEPENDENCY_AUDIT_RESULT: ${{ needs.dependency-audit.result }}
         run: |
           set -euo pipefail
           test "$BUILD_RESULT" = "success"
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            test "$DEPENDENCY_REVIEW_RESULT" = "success"
-          else
-            test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
-          fi
+          test "$DEPENDENCY_AUDIT_RESULT" = "success"
