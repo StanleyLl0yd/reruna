@@ -30,7 +30,7 @@ The board wraps at every edge, so moving off one side brings you back on the opp
 
 ## Current status
 
-**Pre-alpha / R0 foundation.**
+**R0 — Foundation released (pre-alpha).**
 
 The current build contains the first playable vertical slice:
 
@@ -45,7 +45,7 @@ The current build contains the first playable vertical slice:
 - instant run restart;
 - unit tests for the core rules.
 
-The immediate goal is not content volume. It is to answer one question: **does losing make the player want to tap AGAIN immediately?**
+R0 closes the foundation milestone. The current focus is **R1 — Feel**: tune the loop until losing reliably makes the player want to tap **AGAIN** immediately.
 
 ## Android baseline
 
@@ -73,6 +73,7 @@ The CI workflow installs API 37 and runs unit tests, lint and a debug build.
 ## Project docs
 
 - [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Game design](docs/GAME_DESIGN.md)
 - [Branding](docs/BRANDING.md)
