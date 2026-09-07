@@ -21,7 +21,7 @@ These account-side rules require repository administration capabilities and are 
 - Workflow containers use SHA-256 digests.
 - Workflow permissions default to none and are granted per job.
 - `pull_request_target`, persisted checkout credentials, and inherited reusable-workflow secrets are rejected by policy.
-- Gradle 9.6.0 is downloaded over HTTPS and verified against the repository-pinned SHA-256 before execution.
+- The official Gradle 9.6.0 wrapper is committed, its wrapper JAR SHA-256 is validated, and the distribution ZIP is pinned by SHA-256 in `gradle-wrapper.properties`.
 - Dependabot covers Gradle and GitHub Actions.
 
 ## Dependency security
