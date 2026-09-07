@@ -225,6 +225,29 @@ For any request for a full audit, cleanup, optimization, simplification, or deep
 
 The goal is minimum **necessary complexity**, not minimum line count. Do not perform code golf or speculative rewrites.
 
+
+
+## GitHub security baseline
+
+Security controls are part of the repository contract, not optional CI decoration.
+
+- Before a major milestone or public release, perform a repository security review covering source, dependencies, Android manifest/permissions, CI/CD, release integrity, and supply chain.
+- Keep every non-local GitHub Action pinned to an immutable full 40-character commit SHA. Keep a nearby version comment when useful for maintainability.
+- Pin workflow container images by SHA-256 digest.
+- Do not use `pull_request_target` for normal validation. Never execute untrusted pull-request code with repository secrets, signing material, write tokens, or privileged runners.
+- Default workflow permissions to `permissions: {}` and grant only the minimum job-level permissions required.
+- Keep `security-events: write` limited to jobs that upload code-scanning results.
+- Do not grant `id-token: write`, `contents: write`, `pull-requests: write`, or similar write scopes unless a concrete job requires them.
+- Keep Android verification, CodeQL, Semgrep, Gitleaks, and the resolved Maven Dependency Audit healthy and merge-blocking once repository rulesets are configured.
+- Maintain Dependabot coverage for every package ecosystem actually used by the repository, including GitHub Actions. Audit resolved Maven dependencies against the GitHub Advisory Database.
+- Run `python3 scripts/verify_ci_supply_chain.py` whenever `.github/workflows/**` or `.github/actions/**` changes.
+- Never commit signing keys, keystores, passwords, API keys, tokens, `.env` files, `local.properties`, service-account credentials, or generated secrets.
+- Keep secret material outside Git and supply it only through an appropriate protected secret mechanism.
+- A production release workflow must build from an unambiguous commit/tag, use signing material outside the repository, minimize write permissions, publish checksums, and add provenance/attestation when technically supported.
+- When versioned `v*` releases are introduced, release tags must become immutable before the first production release.
+- If native/JNI/NDK code or native libraries are introduced, perform a dedicated native supply-chain, ABI, memory-safety, and 16 KB page-size review.
+- Do not weaken a security gate merely to make CI pass. Fix the cause or document a narrowly justified exception.
+
 ## App icon source artwork
 
 - The current approved canonical RERUNA app icon is `assets/branding/reruna-icon.png`.

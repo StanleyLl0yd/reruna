@@ -78,6 +78,7 @@ The CI workflow installs API 37 and runs unit tests, lint and a debug build.
 - [Branding](docs/BRANDING.md)
 - [Contributor/agent rules](AGENTS.md)
 - [Audit/refactor protocol](docs/agent/AUDIT_REFACTOR.md)
+- [Security policy](SECURITY.md)
 
 ## Product principles
 

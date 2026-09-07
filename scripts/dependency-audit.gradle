@@ -1,0 +1,38 @@
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+
+gradle.projectsEvaluated {
+    def appProject = gradle.rootProject.findProject(":app")
+    if (appProject == null) {
+        throw new GradleException("Android app project not found")
+    }
+
+    appProject.tasks.register("writeDependencyCoordinates") {
+        doLast {
+            def coordinates = new TreeSet<String>()
+            [
+                "debugCompileClasspath",
+                "debugRuntimeClasspath",
+                "testDebugRuntimeClasspath",
+            ].each { configurationName ->
+                def configuration = appProject.configurations.findByName(configurationName)
+                if (configuration != null && configuration.canBeResolved) {
+                    configuration.incoming.resolutionResult.allComponents.each { component ->
+                        def id = component.id
+                        if (id instanceof ModuleComponentIdentifier) {
+                            coordinates.add("${id.group}:${id.module}:${id.version}")
+                        }
+                    }
+                }
+            }
+
+            if (coordinates.isEmpty()) {
+                throw new GradleException("No Maven dependencies were resolved")
+            }
+
+            def output = new File(gradle.rootProject.projectDir, "build/dependency-coordinates.txt")
+            output.parentFile.mkdirs()
+            output.text = coordinates.join(System.lineSeparator()) + System.lineSeparator()
+            println("Wrote ${coordinates.size()} resolved Maven dependencies to ${output}")
+        }
+    }
+}
