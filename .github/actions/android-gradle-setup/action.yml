@@ -1,5 +1,5 @@
 name: Android Gradle setup
-description: Configure JDK, Android SDK tools, Gradle cache, and a checksum-pinned Gradle distribution
+description: Configure JDK, Android SDK tools, and Gradle cache for the checksum-pinned project wrapper
 
 inputs:
   android-packages:
@@ -30,21 +30,3 @@ runs:
       with:
         cache-provider: basic
         cache-read-only: ${{ inputs.gradle-cache-read-only }}
-
-    - name: Install checksum-pinned Gradle 9.6.0
-      shell: bash
-      run: |
-        set -euo pipefail
-        version="9.6.0"
-        expected_sha256="bbaeb2fef8710818cf0e261201dab964c572f92b942812df0c3620d62a529a01"
-        archive="$RUNNER_TEMP/gradle-$version-bin.zip"
-        install_root="$RUNNER_TEMP/gradle-dist"
-
-        curl           --fail           --location           --proto '=https'           --retry 3           --show-error           --silent           --tlsv1.2           "https://services.gradle.org/distributions/gradle-$version-bin.zip"           --output "$archive"
-
-        printf '%s  %s\n' "$expected_sha256" "$archive" | sha256sum --check --strict
-
-        rm -rf "$install_root"
-        mkdir -p "$install_root"
-        unzip -q "$archive" -d "$install_root"
-        echo "$install_root/gradle-$version/bin" >> "$GITHUB_PATH"
