@@ -58,13 +58,13 @@ jobs:
         run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
 
       - name: Unit tests
-        run: gradle --no-daemon :app:testDebugUnitTest --stacktrace
+        run: ./gradlew --no-daemon :app:testDebugUnitTest --stacktrace
 
       - name: Android lint
-        run: gradle --no-daemon :app:lintDebug --stacktrace
+        run: ./gradlew --no-daemon :app:lintDebug --stacktrace
 
       - name: Build debug artifacts
-        run: gradle --no-daemon :app:assembleDebug :app:bundleDebug --stacktrace
+        run: ./gradlew --no-daemon :app:assembleDebug :app:bundleDebug --stacktrace
 
       - name: Upload debug artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -100,11 +100,11 @@ jobs:
       - name: Verify dependency lock state
         run: |
           set -euo pipefail
-          gradle --no-daemon --no-configuration-cache :app:dependencies --write-locks >/dev/null
+          ./gradlew --no-daemon --no-configuration-cache :app:dependencies --write-locks >/dev/null
           git diff --exit-code -- app/gradle.lockfile
 
       - name: Resolve Maven dependencies
-        run: gradle --no-daemon --no-configuration-cache -I scripts/dependency-audit.gradle :app:writeDependencyCoordinates --stacktrace
+        run: ./gradlew --no-daemon --no-configuration-cache -I scripts/dependency-audit.gradle :app:writeDependencyCoordinates --stacktrace
 
       - name: Audit resolved dependencies
         env:
