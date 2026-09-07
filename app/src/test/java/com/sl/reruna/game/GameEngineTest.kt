@@ -36,6 +36,7 @@ class GameEngineTest {
         assertEquals(GameRules.RECORDING_LENGTH, state.reruns.single().moves.size)
         assertTrue(state.recording.isEmpty())
         assertTrue(state.rerunCreatedThisTurn)
+        assertEquals(1, state.rerunsCreated)
     }
 
     @Test
@@ -92,6 +93,7 @@ class GameEngineTest {
 
         assertEquals(2, state.lastSyncCount)
         assertEquals(setOf(state.player), state.lastSyncCells)
+        assertEquals(1, state.syncEvents)
         assertTrue(state.score >= 1000)
     }
 
@@ -107,6 +109,8 @@ class GameEngineTest {
         val next = GameEngine.step(state, Direction.RIGHT)
 
         assertEquals(1, next.sparksCollectedThisTurn)
+        assertEquals(1, next.totalSparksCollected)
+        assertEquals(1, next.maxCombo)
         assertTrue(next.score >= GameRules.SPARK_BASE_SCORE)
         assertTrue(next.entropy < state.entropy)
     }

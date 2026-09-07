@@ -688,7 +688,9 @@ private fun GameOverOverlay(
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
             )
-            Spacer(Modifier.size(22.dp))
+            Spacer(Modifier.size(14.dp))
+            RunStats(state)
+            Spacer(Modifier.size(18.dp))
             Button(onClick = onRestart) {
                 Text(
                     text = "AGAIN",
@@ -697,5 +699,37 @@ private fun GameOverOverlay(
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun RunStats(
+    state: GameState,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text(
+            text = "RUN STATS",
+            color = RerunaMuted,
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+        )
+        Text(
+            text = "TURNS ${state.turn}  SPARKS ${state.totalSparksCollected}  SYNCS ${state.syncEvents}",
+            color = RerunaText,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+        )
+        Text(
+            text = "RERUNS ${state.rerunsCreated}  MAX COMBO ${state.maxCombo}  RES ${state.resonanceActivations}",
+            color = RerunaMuted,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+        )
     }
 }
