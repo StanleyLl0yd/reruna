@@ -1,62 +1,224 @@
 # AGENTS.md
 
-These rules apply to all automated and human changes in this repository.
+These rules apply to all automated coding agents, maintenance work, and human changes in this repository.
 
-## Product invariant
+## Project identity and priorities
 
-RERUNA is a minimalist strategy arcade game. Complexity belongs in emergent interactions, not in the input scheme or menus.
+RERUNA is a minimalist strategy arcade game. Complexity belongs in emergent interactions, not in the input scheme, menus, or infrastructure.
+
+Preserve these priorities, in order:
+
+1. Correct and deterministic game rules.
+2. Immediate, readable, responsive gameplay.
+3. Data integrity and reproducible runs.
+4. Accessibility and predictable Android behavior.
+5. Resource efficiency.
+6. Minimal necessary architecture and dependency surface.
+7. Future portability of the game rules.
 
 The core loop is:
 
 **MOVE → RECORD → RERUN → SYNC → SURVIVE → IMPROVE**
 
-Do not turn the game into a generic runner, match game, shooter, idle game, or content-heavy puzzle collection.
+Do not turn RERUNA into a generic runner, match game, shooter, idle game, or content-heavy puzzle collection unless the product direction is explicitly changed.
 
-## Architecture rules
+Do not claim release readiness, retention quality, performance, accessibility completeness, or platform support beyond what current repository evidence demonstrates.
 
-1. Keep the game rules in `com.sl.reruna.game`.
-2. The game package must remain free of Android framework and Compose dependencies.
-3. A move must be deterministic for a given `GameState` and `Direction`.
-4. Randomness must flow through explicit engine state so seeded runs are reproducible.
-5. UI code renders state and translates input into directions. It must not duplicate game rules.
-6. Every new rule needs focused unit tests before or with its implementation.
-7. Prefer deleting complexity over adding abstraction without a demonstrated need.
+## Read before changing architecture
+
+Before changing durable behavior or architecture, inspect the relevant parts of:
+
+- `README.md`;
+- `ROADMAP.md`;
+- `docs/ARCHITECTURE.md`;
+- `docs/GAME_DESIGN.md`;
+- this file.
+
+Architecture and game-design documentation are part of the repository contract. Update them in the same change when durable behavior, ownership, terminology, platform requirements, or subsystem boundaries change.
+
+For a full repository audit, cleanup, optimization, simplification, or deep refactor, read and follow `docs/agent/AUDIT_REFACTOR.md` in full before editing.
+
+## Authoritative game architecture
+
+Keep the authoritative game rules in `com.sl.reruna.game`.
+
+The game package must remain free of Android framework and Compose dependencies.
+
+The central rule boundary is conceptually:
+
+`GameState + Direction -> GameState`
+
+Preserve these invariants:
+
+- A move is deterministic for a given `GameState` and `Direction`.
+- Randomness flows through explicit engine state so seeded runs are reproducible.
+- Game state, scoring, Spark collection, Reruns, Sync, Resonance, Entropy, and game-over decisions are engine-owned.
+- UI code renders state and translates user input into commands. It must not duplicate or override game rules.
+- Presentation state must not become a second source of game truth.
+- Persisted values must be explicitly owned. In the current MVP, local best score is persistence; the active run remains authoritative in memory.
+- A future replay, daily seed, challenge, or save format must rebuild or validate authoritative state through the game rules rather than trusting duplicated derived score or geometry.
+
+Do not introduce parallel rule implementations for touch, accessibility, AI, tests, replay, networking, or another platform.
+
+Every non-trivial new or changed rule needs focused deterministic regression coverage.
+
+## Gameplay invariants
+
+Unless explicitly changed as a product decision:
+
+- Board topology is toroidal.
+- The recording length is 8 moves.
+- A Rerun is a recorded past self that replays synchronously.
+- At most 6 Reruns are active.
+- Past selves are programmable assets, not collision enemies.
+- Sparks may be collected by the player or a Rerun.
+- Sync is desirable and must be derived from authoritative post-move positions.
+- Resonance is charged by Syncs.
+- Entropy is the run-ending pressure system.
+- Restart friction must remain minimal.
+
+Use terminology consistently:
+
+- **Rerun** — an 8-move recorded past self.
+- **Spark** — collectible scoring/entropy resource.
+- **Sync** — two or more selves occupying the same cell on a turn.
+- **Resonance** — temporary high-value state charged by Syncs.
+- **Entropy** — run-ending pressure meter.
+
+When tuning numeric values, preserve the underlying rules unless the task explicitly changes them. Treat tuning as gameplay behavior, not as a harmless refactor.
 
 ## Android baseline
 
-- Application ID: `com.sl.reruna`
-- minSdk: 26
-- targetSdk: 37 or newer only after explicit compatibility validation
-- compileSdk: 37 or the latest stable SDK supported by the selected stable toolchain
-- JDK: 17 unless the toolchain requires a justified change
-- Primary production artifact: signed AAB
-- Avoid native/JNI/NDK dependencies unless they have a concrete product benefit
-- Any native dependency must be verified for 64-bit and 16 KB memory page-size compatibility
+- Application ID: `com.sl.reruna`.
+- minSdk: 26.
+- targetSdk: 37 or newer only after explicit compatibility validation.
+- compileSdk: 37 or the latest stable SDK supported by the selected stable toolchain.
+- JDK: 17 unless a justified toolchain requirement changes it.
+- Primary production artifact: signed AAB.
+- APK is a development/direct-install artifact, not the primary store format.
+- Avoid native/JNI/NDK dependencies unless they provide a concrete product benefit.
+- Any native dependency must be verified for required 64-bit ABIs and 16 KB memory page-size compatibility.
 
-Do not raise minimum requirements without a technical reason.
+Do not raise platform requirements without a technical reason.
 
-## Privacy and monetization
+Keep Android/platform APIs outside the pure game-rule layer.
 
-Do not add analytics, advertising SDKs, account requirements, network permissions, device identifiers, tracking, or telemetry by default.
+## UI, input, and accessibility
 
-Any such change requires an explicit product decision and a privacy review.
+- One-finger directional input is a product invariant unless explicitly changed.
+- Different input paths must submit the same authoritative `Direction` commands; they must not implement separate rule logic.
+- Essential game information must not rely on color alone.
+- Preserve usability with Android safe areas, different phone sizes, font scaling, touch input, and reduced-motion preferences where motion is introduced.
+- Animations, haptics, sound, particles, trails, and event labels are presentation. They must not decide legality, score, Sync, Resonance, Entropy, or persistence.
+- Avoid frame-rate-dependent game semantics. The world advances by player moves, not rendering time.
 
-Do not add pay-to-win mechanics or delays designed solely to pressure a purchase.
+## Determinism and performance
 
-## Gameplay terminology
+Equivalent state plus equivalent input must produce equivalent rule output.
 
-Use these names consistently:
+Timing, frame rate, animation clocks, benchmark data, and device performance must not feed authoritative game state.
 
-- **Rerun** — an 8-move recorded past self
-- **Spark** — collectible scoring/entropy resource
-- **Sync** — two or more selves occupying the same cell on a turn
-- **Resonance** — temporary high-value state charged by Syncs
-- **Entropy** — run-ending pressure meter
+Performance work must target practical or measured cost. Review hot paths such as:
 
-## Change discipline
+- per-move allocations;
+- repeated collections or conversions;
+- recomposition breadth;
+- Canvas work;
+- repeated derived calculations;
+- persistence on the input path.
 
-- Keep commits focused.
-- Preserve working behavior unless the task explicitly changes it.
-- Run unit tests and lint for game/UI changes.
-- Update `README.md`, `ROADMAP.md`, or `docs/` when a change affects documented behavior.
-- Do not commit generated APK/AAB artifacts, keystores, secrets, local SDK paths, or IDE state.
+Do not trade correctness, readability, determinism, accessibility, or architecture boundaries for an unmeasured micro-optimization.
+
+Deterministic stress tests must remain hardware-independent. Do not use fragile wall-clock thresholds as correctness gates.
+
+## Dependencies and generated code
+
+Add a production or development dependency only for a concrete current need.
+
+Before adding a dependency, check whether the language, Android SDK, Compose, or the existing stack already provides the capability adequately.
+
+Do not add overlapping libraries for the same purpose.
+
+Do not replace a mature dependency with custom code solely to reduce dependency count. A local replacement is justified only when it clearly reduces total complexity, risk, maintenance cost, or artifact size.
+
+Keep dependency versions and CI configuration reproducible and synchronized.
+
+Prefer maintained GitHub Actions versions; for release-critical workflows, pin third-party actions to immutable commit SHAs where practical.
+
+Do not weaken tests, lint, build, compatibility, or security checks merely to make a change pass.
+
+Generated artifacts are not authoritative source when a generator or source representation exists. Change the source of truth and regenerate instead.
+
+## Privacy, security, and monetization
+
+Do not add analytics, advertising SDKs, account requirements, backend services, network permissions, remote configuration, device identifiers, tracking, or telemetry by default.
+
+Any such change requires an explicit product decision and a privacy/security review.
+
+Do not add pay-to-win mechanics, artificial wait timers, forced interstitial friction between runs, or other dark-pattern retention mechanics without an explicit product decision.
+
+Never commit credentials, tokens, private keys, signing material, keystores, local SDK paths, personal data, generated secrets, or production service configuration.
+
+## Comments and documentation
+
+Keep source-code comments minimal, necessary, current, and English-only.
+
+Do not add comments that narrate obvious code. Prefer names, types, and structure that make the code self-explanatory.
+
+Keep comments that explain non-obvious invariants, ownership, compatibility, lifecycle, safety, resource bounds, or architectural reasons.
+
+Remove stale, misleading, redundant, commented-out historical code and obsolete TODO/FIXME items when the surrounding work proves they are no longer needed.
+
+Review `README.md` after implementation changes. Update `README.md`, `ROADMAP.md`, and relevant `docs/` files in the same change when behavior, architecture, dependencies, commands, platform requirements, or project status change.
+
+## Verification
+
+Run checks appropriate to every change before considering it complete.
+
+The baseline repository verification is:
+
+```text
+gradle --no-daemon :app:testDebugUnitTest
+gradle --no-daemon :app:lintDebug
+gradle --no-daemon :app:assembleDebug
+gradle --no-daemon :app:bundleDebug
+```
+
+For release, packaging, dependency, manifest, SDK, signing, or shrinker changes, also verify the applicable release AAB path in CI or an equivalent controlled environment.
+
+Changes to the pure game engine must run the full game-engine unit suite.
+
+Changes to UI/input must compile the Android app and preserve the authoritative engine boundary.
+
+Changes to persistence must test existing-value, missing-value, malformed-value, and migration/recovery behavior as applicable.
+
+Never claim a check passed unless it actually ran successfully. State unavailable platforms, hardware, credentials, signing material, SDKs, or other verification limitations explicitly.
+
+## Change and Git discipline
+
+Inspect the repository state before editing and preserve unrelated user changes.
+
+Keep changes and commits focused on one coherent purpose. Separate behavior-preserving refactoring from unrelated feature development.
+
+Keep `main` buildable. For non-trivial work, use short-lived topic branches and pull requests rather than using `main` as a scratch branch.
+
+Do not force-push shared history, discard unrelated changes, weaken repository protections, or delete active branches without explicit authorization.
+
+Merge only after the required checks pass.
+
+Repository cleanup should also review obsolete pull requests and stale topic branches when relevant; remove them only when their obsolescence is clear.
+
+## Repository-wide audit and deep refactoring
+
+A repository-wide audit is an implementation task, not merely a request for recommendations.
+
+For any request for a full audit, cleanup, optimization, simplification, or deep refactor:
+
+1. Read `docs/agent/AUDIT_REFACTOR.md` in full before editing.
+2. Preserve every RERUNA-specific invariant in this file.
+3. Establish a verified baseline before changing behavior-preserving code.
+4. Implement safe, justified simplifications rather than only listing them.
+5. Perform the mandatory second full pass.
+6. Finish with the complete available verification suite and evidence-based final report.
+
+The goal is minimum **necessary complexity**, not minimum line count. Do not perform code golf or speculative rewrites.
