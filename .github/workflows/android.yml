@@ -95,7 +95,7 @@ jobs:
         run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
 
       - name: Resolve Maven dependencies
-        run: gradle --no-daemon -I scripts/dependency-audit.gradle :app:writeDependencyCoordinates --stacktrace
+        run: gradle --no-daemon --no-configuration-cache -I scripts/dependency-audit.gradle :app:writeDependencyCoordinates --stacktrace
 
       - name: Audit resolved dependencies
         env:
