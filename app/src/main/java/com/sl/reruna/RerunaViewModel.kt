@@ -26,7 +26,19 @@ class RerunaViewModel(
     val state: State<GameState>
         get() = _state
 
+    private val _paused = mutableStateOf(false)
+    val paused: State<Boolean>
+        get() = _paused
+
+    private val _showTutorial = mutableStateOf(
+        !preferences.getBoolean(KEY_TUTORIAL_SEEN, false),
+    )
+    val showTutorial: State<Boolean>
+        get() = _showTutorial
+
     fun move(direction: Direction) {
+        if (_paused.value) return
+
         val next = GameEngine.step(_state.value, direction)
         _state.value = next
 
@@ -45,8 +57,22 @@ class RerunaViewModel(
         )
     }
 
+    fun setPaused(paused: Boolean) {
+        _paused.value = paused
+    }
+
+    fun dismissTutorial() {
+        if (!_showTutorial.value) return
+
+        _showTutorial.value = false
+        preferences.edit()
+            .putBoolean(KEY_TUTORIAL_SEEN, true)
+            .apply()
+    }
+
     private companion object {
         const val PREFERENCES_NAME = "reruna"
         const val KEY_BEST_SCORE = "best_score"
+        const val KEY_TUTORIAL_SEEN = "tutorial_seen"
     }
 }

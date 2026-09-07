@@ -10,10 +10,15 @@ fun RerunaApp(
     viewModel: RerunaViewModel = viewModel(),
 ) {
     val state by viewModel.state
+    val paused by viewModel.paused
+    val showTutorial by viewModel.showTutorial
 
     GameScreen(
         state = state,
+        paused = paused,
+        showTutorial = showTutorial,
         onMove = viewModel::move,
         onRestart = viewModel::restart,
+        onDismissTutorial = viewModel::dismissTutorial,
     )
 }
