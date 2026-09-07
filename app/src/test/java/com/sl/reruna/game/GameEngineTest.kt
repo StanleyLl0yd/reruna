@@ -91,7 +91,33 @@ class GameEngineTest {
         state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
 
         assertEquals(2, state.lastSyncCount)
+        assertEquals(setOf(state.player), state.lastSyncCells)
         assertTrue(state.score >= 1000)
+    }
+
+    @Test
+    fun sparkCollectionIsExposedAsDeterministicTurnEvent() {
+        val start = GameEngine.newGame(seed = 31L)
+        val target = start.player.moved(Direction.RIGHT)
+        val state = start.copy(
+            sparks = setOf(target),
+            entropy = 50,
+        )
+
+        val next = GameEngine.step(state, Direction.RIGHT)
+
+        assertEquals(1, next.sparksCollectedThisTurn)
+        assertTrue(next.score >= GameRules.SPARK_BASE_SCORE)
+        assertTrue(next.entropy < state.entropy)
+    }
+
+    @Test
+    fun turnWithoutCollectionClearsSparkEvent() {
+        val state = GameEngine.newGame(seed = 37L).copy(sparks = emptySet())
+
+        val next = GameEngine.step(state, Direction.LEFT)
+
+        assertEquals(0, next.sparksCollectedThisTurn)
     }
 
     @Test

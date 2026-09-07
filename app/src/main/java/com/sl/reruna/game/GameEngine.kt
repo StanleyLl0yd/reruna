@@ -37,7 +37,9 @@ object GameEngine {
             resonanceTurnsRemaining = 0,
             turn = 0,
             rngState = seeded.rngState,
+            sparksCollectedThisTurn = 0,
             lastSyncCount = 0,
+            lastSyncCells = emptySet(),
             rerunCreatedThisTurn = false,
             resonanceStartedThisTurn = false,
             gameOver = false,
@@ -64,22 +66,30 @@ object GameEngine {
         val collectedCells = state.sparks.intersect(occupiedAfterMove)
         val collectedCount = collectedCells.size
 
-        val syncCount = activePositions
+        val positionCounts = activePositions
             .groupingBy { it }
             .eachCount()
+        val syncCells = positionCounts
+            .filterValues { it >= 2 }
+            .keys
+        val syncCount = positionCounts
             .values
             .maxOrNull()
             ?.takeIf { it >= 2 }
             ?: 0
 
         val activeResonance = state.resonanceTurnsRemaining > 0
-        val scoreMultiplier = if (activeResonance) 2 else 1
+        val scoreMultiplier = if (activeResonance) {
+            GameRules.RESONANCE_SCORE_MULTIPLIER
+        } else {
+            1
+        }
         val sparkScore = sparkScore(
             collectedCount = collectedCount,
             comboBefore = state.combo,
         )
         val syncScore = if (syncCount >= 2) {
-            250 * syncCount * syncCount
+            GameRules.SYNC_BASE_SCORE * syncCount * syncCount
         } else {
             0
         }
@@ -97,7 +107,7 @@ object GameEngine {
         }
 
         val rawResonance = if (!activeResonance && syncCount >= 2) {
-            state.resonance + syncCount * 12
+            state.resonance + syncCount * GameRules.RESONANCE_CHARGE_PER_PARTICIPANT
         } else {
             state.resonance
         }
@@ -113,9 +123,21 @@ object GameEngine {
             else -> min(GameRules.RESONANCE_MAX, rawResonance)
         }
 
-        val baseEntropyGain = 2 + state.turn / 64 + state.reruns.size / 2
-        val entropyGain = if (activeResonance) max(1, baseEntropyGain - 1) else baseEntropyGain
-        val entropyReduction = collectedCount * 7 + if (syncCount >= 2) syncCount * 4 else 0
+        val baseEntropyGain = GameRules.STARTING_ENTROPY_GAIN +
+            state.turn / GameRules.ENTROPY_TURN_RAMP_INTERVAL +
+            state.reruns.size / GameRules.ENTROPY_RERUN_RAMP_DIVISOR
+        val entropyGain = if (activeResonance) {
+            max(1, baseEntropyGain - GameRules.RESONANCE_ENTROPY_RELIEF)
+        } else {
+            baseEntropyGain
+        }
+        val entropyReduction =
+            collectedCount * GameRules.SPARK_ENTROPY_REDUCTION +
+                if (syncCount >= 2) {
+                    syncCount * GameRules.SYNC_ENTROPY_REDUCTION_PER_PARTICIPANT
+                } else {
+                    0
+                }
         val nextEntropy = (state.entropy + entropyGain - entropyReduction)
             .coerceIn(0, GameRules.ENTROPY_MAX)
 
@@ -146,7 +168,7 @@ object GameEngine {
         val remainingSparks = state.sparks - collectedCells
         val targetSparkCount = min(
             GameRules.MAX_SPARKS,
-            GameRules.STARTING_SPARKS + state.turn / 48,
+            GameRules.STARTING_SPARKS + state.turn / GameRules.SPARK_RAMP_INTERVAL,
         )
         val displayOccupied = buildSet {
             add(nextPlayer)
@@ -177,7 +199,9 @@ object GameEngine {
             resonanceTurnsRemaining = nextResonanceTurns,
             turn = state.turn + 1,
             rngState = spawned.rngState,
+            sparksCollectedThisTurn = collectedCount,
             lastSyncCount = syncCount,
+            lastSyncCells = syncCells,
             rerunCreatedThisTurn = completedCycle,
             resonanceStartedThisTurn = resonanceTriggered,
             gameOver = isGameOver,
@@ -191,8 +215,8 @@ object GameEngine {
         var total = 0
         repeat(collectedCount) { index ->
             val comboNumber = comboBefore + index + 1
-            val comboMultiplier = 1 + (comboNumber - 1) / 5
-            total += 100 * comboMultiplier
+            val comboMultiplier = 1 + (comboNumber - 1) / GameRules.COMBO_SCORE_STEP
+            total += GameRules.SPARK_BASE_SCORE * comboMultiplier
         }
         return total
     }
