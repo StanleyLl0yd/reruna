@@ -69,7 +69,7 @@ Repository and CI controls include:
 - Gitleaks full-history secret scanning;
 - resolved Gradle/Maven dependency auditing against the GitHub Advisory Database;
 - committed Gradle dependency locking with CI drift detection;
-- checksum-pinned Gradle 9.6.0 CI bootstrap;
+- committed Gradle 9.6.0 wrapper with pinned wrapper-JAR and distribution SHA-256 verification;
 - Dependabot for Gradle and GitHub Actions;
 - least-privilege workflow permissions;
 - full-SHA-pinned external GitHub Actions;
