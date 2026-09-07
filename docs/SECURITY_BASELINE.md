@@ -8,8 +8,8 @@ Target GitHub repository rules remain:
 
 - protect the default branch;
 - forbid deletion and non-fast-forward updates;
-- require pull requests, squash merging, linear history, and conversation resolution;
-- require successful `Verify`, `Analyze Java and Kotlin`, `Semgrep`, and `Gitleaks` checks;
+- require pull requests, squash merging, linear history, conversation resolution, and verified signed commits on `main`;
+- require successful `Verify`, `Analyze Java and Kotlin`, `Semgrep`, `Gitleaks`, and `Dependency Review` checks;
 - keep production version tags immutable once versioned releases begin;
 - enforce CodeQL findings at an appropriate security-severity threshold.
 
@@ -30,7 +30,7 @@ These account-side rules require repository administration capabilities and are 
 - CI regenerates the lock state and fails on drift.
 - Resolved Maven dependencies are checked against the GitHub Advisory Database for high/critical advisories.
 - Dependabot provides update pull requests.
-- GitHub-native Dependency Review remains unavailable until Dependency Graph is enabled for the repository.
+- GitHub-native Dependency Review is enabled on pull requests and is required by the protected `main` ruleset.
 
 ## Static analysis and secrets
 
