@@ -165,7 +165,9 @@ Keep source-code comments minimal, necessary, current, and English-only.
 
 Do not add comments that narrate obvious code. Prefer names, types, and structure that make the code self-explanatory.
 
-Keep comments that explain non-obvious invariants, ownership, compatibility, lifecycle, safety, resource bounds, or architectural reasons.
+Keep comments only when they explain a non-obvious reason, constraint, workaround, invariant, ownership boundary, compatibility requirement, lifecycle or safety rule, resource bound, architectural reason, or important contract.
+
+Do not replace clear code with explanatory comments when the code itself can be made self-explanatory.
 
 Remove stale, misleading, redundant, commented-out historical code and obsolete TODO/FIXME items when the surrounding work proves they are no longer needed.
 
