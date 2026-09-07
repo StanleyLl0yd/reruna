@@ -20,6 +20,7 @@ data class GameState(
     val resonanceActivations: Int,
     val rerunsCreated: Int,
     val maxCombo: Int,
+    val activeSyncGroups: Set<Set<Int>>,
     val sparksCollectedThisTurn: Int,
     val lastSyncCount: Int,
     val lastSyncCells: Set<Cell>,
