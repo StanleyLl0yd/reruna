@@ -1,60 +1,117 @@
-name: Android
+name: Android CI
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: android-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: Build checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          distribution: temurin
-          java-version: "17"
+          persist-credentials: false
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Verify CI supply-chain policy
+        run: python3 scripts/verify_ci_supply_chain.py
 
-      - name: Install Android API 37.0
-        run: sdkmanager --channel=3 "platforms;android-37.0" "build-tools;36.0.0"
-
-      - name: Set up Gradle 9.6.0
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.6.0"
+      - name: Verify application identity
+        run: |
+          set -euo pipefail
+          namespace="$(sed -n 's/^[[:space:]]*namespace = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)"
+          application_id="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)"
+          test "$namespace" = "com.sl.reruna"
+          test "$application_id" = "com.sl.reruna"
 
       - name: Verify canonical icon
         run: |
+          set -euo pipefail
           test "$(sha256sum assets/branding/reruna-icon.png | cut -d' ' -f1)" = "5ecf527eb8a01550cce8949a66c3d68d77e716acdd12f2d887f09eee677f579b"
           cmp -s assets/branding/reruna-icon.png app/src/main/res/mipmap-nodpi/ic_launcher.png
 
-      - name: Unit tests
-        run: gradle --no-daemon :app:testDebugUnitTest
+      - name: Set up Android build environment
+        uses: ./.github/actions/android-gradle-setup
+        with:
+          gradle-cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Lint
-        run: gradle --no-daemon :app:lintDebug
+      - name: Install Android API 37.0
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+
+      - name: Unit tests
+        run: gradle --no-daemon :app:testDebugUnitTest --stacktrace
+
+      - name: Android lint
+        run: gradle --no-daemon :app:lintDebug --stacktrace
 
       - name: Build debug artifacts
-        run: gradle --no-daemon :app:assembleDebug :app:bundleDebug
+        run: gradle --no-daemon :app:assembleDebug :app:bundleDebug --stacktrace
 
       - name: Upload debug artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: reruna-debug
+          name: reruna-debug-${{ github.sha }}
           if-no-files-found: error
           retention-days: 14
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/bundle/debug/app-debug.aab
+
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          vulnerability-check: true
+          license-check: true
+          comment-summary-in-pr: never
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 120
+          show-patched-versions: true
+
+  verify:
+    name: Verify
+    if: always()
+    needs: [build, dependency-review]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - name: Enforce verification results
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          test "$BUILD_RESULT" = "success"
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            test "$DEPENDENCY_REVIEW_RESULT" = "success"
+          else
+            test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
+          fi
