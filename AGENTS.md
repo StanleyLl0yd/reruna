@@ -225,6 +225,9 @@ The goal is minimum **necessary complexity**, not minimum line count. Do not per
 
 ## App icon source artwork
 
+- The current approved canonical RERUNA app icon is `assets/branding/reruna-icon.png`.
+- Its SHA-256 is `5ecf527eb8a01550cce8949a66c3d68d77e716acdd12f2d887f09eee677f579b`.
+- The Android launcher copy at `app/src/main/res/mipmap-nodpi/ic_launcher.png` must remain byte-identical to the canonical source.
 - When the project owner provides a new app icon as a PNG and identifies it as the app icon, treat that exact PNG as the canonical source artwork.
 - Keep that source as the original raster PNG. Do not trace, vectorize, redraw, restyle, recreate, or convert it to SVG, vector PDF, Android VectorDrawable, SF Symbol, or any other vector representation unless the project owner explicitly requests it.
 - Do not overwrite, recompress, optimize in place, or otherwise rewrite the canonical PNG. Keep the uploaded source unchanged.

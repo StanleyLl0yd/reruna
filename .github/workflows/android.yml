@@ -35,6 +35,11 @@ jobs:
         with:
           gradle-version: "9.6.0"
 
+      - name: Verify canonical icon
+        run: |
+          test "$(sha256sum assets/branding/reruna-icon.png | cut -d' ' -f1)" = "5ecf527eb8a01550cce8949a66c3d68d77e716acdd12f2d887f09eee677f579b"
+          cmp -s assets/branding/reruna-icon.png app/src/main/res/mipmap-nodpi/ic_launcher.png
+
       - name: Unit tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
