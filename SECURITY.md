@@ -68,11 +68,15 @@ Repository and CI controls include:
 - Semgrep security and secret rules;
 - Gitleaks full-history secret scanning;
 - resolved Gradle/Maven dependency auditing against the GitHub Advisory Database;
+- committed Gradle dependency locking with CI drift detection;
+- checksum-pinned Gradle 9.6.0 CI bootstrap;
 - Dependabot for Gradle and GitHub Actions;
 - least-privilege workflow permissions;
 - full-SHA-pinned external GitHub Actions;
 - digest-pinned workflow containers;
-- a repository script that rejects common GitHub Actions supply-chain regressions.
+- a repository script that rejects common GitHub Actions supply-chain regressions;
+- Android manifest security baseline checks for permissions, cleartext traffic, debuggable state, and exported components;
+- scheduled/manual Qodana JVM analysis as an additional non-blocking static-analysis layer.
 
 ## Release security
 

@@ -46,6 +46,9 @@ jobs:
           test "$(sha256sum assets/branding/reruna-icon.png | cut -d' ' -f1)" = "5ecf527eb8a01550cce8949a66c3d68d77e716acdd12f2d887f09eee677f579b"
           cmp -s assets/branding/reruna-icon.png app/src/main/res/mipmap-nodpi/ic_launcher.png
 
+      - name: Verify Android manifest security baseline
+        run: python3 scripts/verify_android_manifest_security.py
+
       - name: Set up Android build environment
         uses: ./.github/actions/android-gradle-setup
         with:
@@ -93,6 +96,12 @@ jobs:
 
       - name: Install Android API 37.0
         run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+
+      - name: Verify dependency lock state
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --no-configuration-cache :app:dependencies --write-locks >/dev/null
+          git diff --exit-code -- app/gradle.lockfile
 
       - name: Resolve Maven dependencies
         run: gradle --no-daemon --no-configuration-cache -I scripts/dependency-audit.gradle :app:writeDependencyCoordinates --stacktrace
