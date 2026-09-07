@@ -143,6 +143,8 @@ Do not replace a mature dependency with custom code solely to reduce dependency 
 
 Keep dependency versions and CI configuration reproducible and synchronized.
 
+Keep Gradle dependency locks committed and update them only with an intentional dependency change. Keep the committed Gradle wrapper, wrapper JAR checksum, distribution version, and distribution SHA-256 pin synchronized; never remove wrapper checksum verification.
+
 Prefer maintained GitHub Actions versions; for release-critical workflows, pin third-party actions to immutable commit SHAs where practical.
 
 Do not weaken tests, lint, build, compatibility, or security checks merely to make a change pass.
@@ -180,10 +182,12 @@ Run checks appropriate to every change before considering it complete.
 The baseline repository verification is:
 
 ```text
-gradle --no-daemon :app:testDebugUnitTest
-gradle --no-daemon :app:lintDebug
-gradle --no-daemon :app:assembleDebug
-gradle --no-daemon :app:bundleDebug
+./gradlew --no-daemon :app:testDebugUnitTest
+./gradlew --no-daemon :app:lintDebug
+./gradlew --no-daemon :app:assembleDebug
+./gradlew --no-daemon :app:bundleDebug
+python3 scripts/verify_android_manifest_security.py
+python3 scripts/verify_ci_supply_chain.py
 ```
 
 For release, packaging, dependency, manifest, SDK, signing, or shrinker changes, also verify the applicable release AAB path in CI or an equivalent controlled environment.

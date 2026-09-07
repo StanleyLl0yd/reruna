@@ -46,7 +46,7 @@ jobs:
           queries: security-extended
 
       - name: Build for analysis
-        run: gradle --no-daemon clean :app:assembleDebug --no-build-cache --rerun-tasks --stacktrace
+        run: ./gradlew --no-daemon clean :app:assembleDebug --no-build-cache --rerun-tasks --stacktrace
 
       - name: Analyze
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9

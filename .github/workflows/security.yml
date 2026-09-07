@@ -53,3 +53,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITLEAKS_ENABLE_COMMENTS: 'false'
+
+  qodana:
+    name: Qodana
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Android build environment
+        uses: ./.github/actions/android-gradle-setup
+        with:
+          gradle-cache-read-only: true
+
+      - name: Install Android API 37.0
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+
+      - name: Prepare Gradle dependencies
+        run: ./gradlew --no-daemon :app:dependencies --stacktrace
+
+      - name: Run Qodana
+        uses: JetBrains/qodana-action@10be11607eb323a180e2b76b26c9c5cdceac3e77 # v2026.2.1
+        with:
+          args: --linter qodana-jvm-community --within-docker false --only-directory app/src --print-problems
+          upload-result: true
+          artifact-name: qodana-report

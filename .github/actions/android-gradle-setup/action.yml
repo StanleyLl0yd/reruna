@@ -1,5 +1,5 @@
 name: Android Gradle setup
-description: Configure JDK, Android SDK tools, and Gradle for Android workflows
+description: Configure JDK, Android SDK tools, and Gradle cache for the checksum-pinned project wrapper
 
 inputs:
   android-packages:
@@ -25,9 +25,8 @@ runs:
       with:
         packages: ${{ inputs.android-packages }}
 
-    - name: Set up Gradle 9.6.0
+    - name: Set up Gradle cache
       uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
       with:
-        gradle-version: '9.6.0'
         cache-provider: basic
         cache-read-only: ${{ inputs.gradle-cache-read-only }}
