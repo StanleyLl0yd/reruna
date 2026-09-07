@@ -12,6 +12,8 @@ All notable milestone changes are recorded here.
 - Lifecycle-aware pause/input suppression.
 - Lightweight first-run in-game tutorial with persistent dismissal.
 - Four accessible on-screen direction buttons that submit the same Direction commands as swipes.
+- Compact local run statistics for turns, Sparks, Syncs, Reruns, maximum Combo, and Resonance activations.
+- An evidence-driven R1 playtest protocol and adb-based frame-time/memory capture helper.
 
 ### Changed
 
