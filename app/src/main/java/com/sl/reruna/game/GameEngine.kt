@@ -7,6 +7,7 @@ object GameEngine {
     private const val DEFAULT_SEED = 0x524552554E41L
     private const val RNG_MULTIPLIER = 6364136223846793005L
     private const val RNG_INCREMENT = 1442695040888963407L
+    private const val PLAYER_PARTICIPANT_ID = 0
 
     fun newGame(
         seed: Long = DEFAULT_SEED,
@@ -42,6 +43,7 @@ object GameEngine {
             resonanceActivations = 0,
             rerunsCreated = 0,
             maxCombo = 0,
+            activeSyncGroups = emptySet(),
             sparksCollectedThisTurn = 0,
             lastSyncCount = 0,
             lastSyncCells = emptySet(),
@@ -63,25 +65,25 @@ object GameEngine {
             rerun.copy(position = rerun.position.moved(rerun.moves[stepIndex]))
         }
 
-        val activePositions = buildList {
+        val activePositions = buildSet {
             add(nextPlayer)
             movedReruns.forEach { add(it.position) }
         }
-        val occupiedAfterMove = activePositions.toSet()
-        val collectedCells = state.sparks.intersect(occupiedAfterMove)
+        val collectedCells = state.sparks.intersect(activePositions)
         val collectedCount = collectedCells.size
 
-        val positionCounts = activePositions
-            .groupingBy { it }
-            .eachCount()
-        val syncCells = positionCounts
-            .filterValues { it >= 2 }
-            .keys
-        val syncCount = positionCounts
-            .values
-            .maxOrNull()
-            ?.takeIf { it >= 2 }
+        val syncGroupsAtMove = syncGroupsByCell(
+            player = nextPlayer,
+            reruns = movedReruns,
+        )
+        val newSyncs = syncGroupsAtMove.filterValues { group ->
+            group !in state.activeSyncGroups
+        }
+        val syncCells = newSyncs.keys
+        val syncCount = newSyncs.values
+            .maxOfOrNull { it.size }
             ?: 0
+        val syncParticipantTotal = newSyncs.values.sumOf { it.size }
 
         val activeResonance = state.resonanceTurnsRemaining > 0
         val scoreMultiplier = if (activeResonance) {
@@ -93,10 +95,8 @@ object GameEngine {
             collectedCount = collectedCount,
             comboBefore = state.combo,
         )
-        val syncScore = if (syncCount >= 2) {
-            GameRules.SYNC_BASE_SCORE * syncCount * syncCount
-        } else {
-            0
+        val syncScore = newSyncs.values.sumOf { group ->
+            GameRules.SYNC_BASE_SCORE * group.size * group.size
         }
         val nextScore = state.score + (sparkScore + syncScore) * scoreMultiplier
 
@@ -111,8 +111,9 @@ object GameEngine {
             else -> state.combo
         }
 
-        val rawResonance = if (!activeResonance && syncCount >= 2) {
-            state.resonance + syncCount * GameRules.RESONANCE_CHARGE_PER_PARTICIPANT
+        val rawResonance = if (!activeResonance && syncParticipantTotal > 0) {
+            state.resonance +
+                syncParticipantTotal * GameRules.RESONANCE_CHARGE_PER_PARTICIPANT
         } else {
             state.resonance
         }
@@ -138,11 +139,7 @@ object GameEngine {
         }
         val entropyReduction =
             collectedCount * GameRules.SPARK_ENTROPY_REDUCTION +
-                if (syncCount >= 2) {
-                    syncCount * GameRules.SYNC_ENTROPY_REDUCTION_PER_PARTICIPANT
-                } else {
-                    0
-                }
+                syncParticipantTotal * GameRules.SYNC_ENTROPY_REDUCTION_PER_PARTICIPANT
         val nextEntropy = (state.entropy + entropyGain - entropyReduction)
             .coerceIn(0, GameRules.ENTROPY_MAX)
 
@@ -171,23 +168,23 @@ object GameEngine {
         }
 
         val remainingSparks = state.sparks - collectedCells
-        val targetSparkCount = min(
-            GameRules.MAX_SPARKS,
-            GameRules.STARTING_SPARKS + state.turn / GameRules.SPARK_RAMP_INTERVAL,
-        )
         val displayOccupied = buildSet {
             add(nextPlayer)
             nextReruns.forEach { add(it.position) }
         }
         val spawned = spawnUntil(
             sparks = remainingSparks,
-            targetCount = targetSparkCount,
+            targetCount = GameRules.MAX_SPARKS,
             occupied = displayOccupied,
             rngState = state.rngState,
         )
 
         val isGameOver = nextEntropy >= GameRules.ENTROPY_MAX
         val nextBestScore = max(state.bestScore, nextScore)
+        val nextActiveSyncGroups = syncGroupsByCell(
+            player = nextPlayer,
+            reruns = nextReruns,
+        ).values.toSet()
 
         return state.copy(
             player = nextPlayer,
@@ -205,10 +202,11 @@ object GameEngine {
             turn = state.turn + 1,
             rngState = spawned.rngState,
             totalSparksCollected = state.totalSparksCollected + collectedCount,
-            syncEvents = state.syncEvents + if (syncCount >= 2) 1 else 0,
+            syncEvents = state.syncEvents + newSyncs.size,
             resonanceActivations = state.resonanceActivations + if (resonanceTriggered) 1 else 0,
             rerunsCreated = state.rerunsCreated + if (completedCycle) 1 else 0,
             maxCombo = max(state.maxCombo, nextCombo),
+            activeSyncGroups = nextActiveSyncGroups,
             sparksCollectedThisTurn = collectedCount,
             lastSyncCount = syncCount,
             lastSyncCells = syncCells,
@@ -216,6 +214,22 @@ object GameEngine {
             resonanceStartedThisTurn = resonanceTriggered,
             gameOver = isGameOver,
         )
+    }
+
+    private fun syncGroupsByCell(
+        player: Cell,
+        reruns: List<Rerun>,
+    ): Map<Cell, Set<Int>> {
+        val participantsByCell = mutableMapOf<Cell, MutableSet<Int>>()
+        participantsByCell.getOrPut(player) { mutableSetOf() }
+            .add(PLAYER_PARTICIPANT_ID)
+        reruns.forEach { rerun ->
+            participantsByCell.getOrPut(rerun.position) { mutableSetOf() }
+                .add(rerun.id)
+        }
+        return participantsByCell
+            .filterValues { it.size >= 2 }
+            .mapValues { (_, participants) -> participants.toSet() }
     }
 
     private fun sparkScore(

@@ -25,6 +25,24 @@ class GameEngineTest {
     }
 
     @Test
+    fun newGameStartsWithFourSparks() {
+        val state = GameEngine.newGame(seed = 43L)
+
+        assertEquals(4, state.sparks.size)
+    }
+
+    @Test
+    fun firstTurnUsesGentlerEntropyGain() {
+        val state = GameEngine.newGame(seed = 47L).copy(
+            sparks = emptySet(),
+        )
+
+        val next = GameEngine.step(state, Direction.LEFT)
+
+        assertEquals(GameRules.STARTING_ENTROPY_GAIN, next.entropy)
+    }
+
+    @Test
     fun eightMovesCreateRerunAndStartFreshRecording() {
         var state = GameEngine.newGame(seed = 7L)
 
@@ -72,29 +90,47 @@ class GameEngineTest {
     }
 
     @Test
-    fun matchingClosedRouteCreatesSync() {
-        var state = GameEngine.newGame(seed = 19L)
-        val closedRoute = listOf(
-            Direction.RIGHT,
-            Direction.LEFT,
-            Direction.RIGHT,
-            Direction.LEFT,
-            Direction.RIGHT,
-            Direction.LEFT,
-            Direction.RIGHT,
-            Direction.LEFT,
-        )
-
-        closedRoute.forEach { direction ->
-            state = GameEngine.step(state.copy(entropy = 0), direction)
-        }
+    fun convergingParticipantsCreateSync() {
+        var state = syncTestState(seed = 19L)
 
         state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
 
         assertEquals(2, state.lastSyncCount)
-        assertEquals(setOf(state.player), state.lastSyncCells)
+        assertEquals(setOf(Cell(1, 0)), state.lastSyncCells)
         assertEquals(1, state.syncEvents)
-        assertTrue(state.score >= 1000)
+        assertEquals(24, state.resonance)
+        assertTrue(state.score >= 600)
+    }
+
+    @Test
+    fun sustainedOverlapDoesNotFarmSyncRewardsEveryTurn() {
+        var state = syncTestState(seed = 53L)
+
+        state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
+        val syncEventsAfterConvergence = state.syncEvents
+        val resonanceAfterConvergence = state.resonance
+
+        state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
+
+        assertEquals(syncEventsAfterConvergence, state.syncEvents)
+        assertEquals(0, state.lastSyncCount)
+        assertEquals(resonanceAfterConvergence, state.resonance)
+    }
+
+    @Test
+    fun separationAllowsSameParticipantsToSyncAgain() {
+        var state = syncTestState(seed = 59L)
+
+        state = GameEngine.step(state.copy(entropy = 0), Direction.RIGHT)
+        assertEquals(1, state.syncEvents)
+
+        state = GameEngine.step(state.copy(entropy = 0), Direction.UP)
+        assertEquals(0, state.lastSyncCount)
+
+        state = GameEngine.step(state.copy(entropy = 0), Direction.DOWN)
+
+        assertEquals(2, state.syncEvents)
+        assertEquals(2, state.lastSyncCount)
     }
 
     @Test
@@ -145,5 +181,32 @@ class GameEngineTest {
 
         assertEquals(ended, next)
         assertFalse(next.rerunCreatedThisTurn)
+    }
+
+    private fun syncTestState(seed: Long): GameState {
+        val state = GameEngine.newGame(seed = seed)
+        val rerun = Rerun(
+            id = 1,
+            origin = Cell(2, 0),
+            moves = listOf(
+                Direction.LEFT,
+                Direction.RIGHT,
+                Direction.LEFT,
+                Direction.RIGHT,
+                Direction.LEFT,
+                Direction.RIGHT,
+                Direction.LEFT,
+                Direction.RIGHT,
+            ),
+            position = Cell(2, 0),
+        )
+        return state.copy(
+            player = Cell(0, 0),
+            reruns = listOf(rerun),
+            recording = emptyList(),
+            recordingOrigin = Cell(0, 0),
+            sparks = emptySet(),
+            activeSyncGroups = emptySet(),
+        )
     }
 }

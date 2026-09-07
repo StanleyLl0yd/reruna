@@ -17,6 +17,7 @@ All notable milestone changes are recorded here.
 
 ### Changed
 
+- First playtest-driven balance pass prevents sustained-overlap Sync farming, softens the early Entropy curve, keeps four Sparks active, and reduces Sync base score.
 - Gameplay tuning constants are centralized in GameRules without claiming playtest-driven value changes.
 - R1 remains open pending real-play tuning, device-size/refresh-rate testing, and frame-time/allocation profiling.
 
