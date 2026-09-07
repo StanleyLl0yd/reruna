@@ -1,0 +1,52 @@
+name: Bootstrap Gradle wrapper
+
+on:
+  push:
+    branches: [security/additional-checks]
+
+permissions: {}
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Android build environment
+        uses: ./.github/actions/android-gradle-setup
+        with:
+          gradle-cache-read-only: true
+
+      - name: Generate and commit Gradle wrapper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [[ -f gradle/wrapper/gradle-wrapper.jar ]]; then
+            echo "Gradle wrapper is already committed."
+            exit 0
+          fi
+
+          gradle --no-daemon wrapper --gradle-version 9.6.0 --distribution-type bin
+          properties="gradle/wrapper/gradle-wrapper.properties"
+          sed -i '/^distributionSha256Sum=/d' "$properties"
+          sed -i '/^distributionUrl=/i distributionSha256Sum=bbaeb2fef8710818cf0e261201dab964c572f92b942812df0c3620d62a529a01' "$properties"
+
+          test "$(sha256sum gradle/wrapper/gradle-wrapper.jar | cut -d' ' -f1)" = "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7"
+          grep -Fx 'distributionSha256Sum=bbaeb2fef8710818cf0e261201dab964c572f92b942812df0c3620d62a529a01' "$properties"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar "$properties"
+          git commit -m "security: add checksum-pinned Gradle wrapper"
+
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:$GITHUB_REF_NAME"
