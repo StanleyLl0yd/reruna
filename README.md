@@ -30,9 +30,9 @@ The board wraps at every edge, so moving off one side brings you back on the opp
 
 ## Current status
 
-**R0 — Foundation released (pre-alpha).**
+**R1 — Feel in development (pre-alpha).**
 
-The current build contains the first playable vertical slice:
+R0 established the first playable vertical slice. The current R1 work keeps the same deterministic rules while making important game events easier to read and the input more inclusive:
 
 - deterministic pure-Kotlin game engine;
 - toroidal 7×9 board;
@@ -40,12 +40,16 @@ The current build contains the first playable vertical slice:
 - up to 6 repeating Reruns;
 - Sparks, Combo, Sync, Resonance and Entropy;
 - persistent local best score;
-- one-finger swipe input;
+- one-finger swipe input plus accessible direction buttons;
+- first-run in-game guidance;
+- explicit Sync location feedback, Rerun transition feedback, and active Resonance treatment;
+- deterministic event-to-sound cues and event haptics;
+- lifecycle-aware pause/input suppression while the activity is paused;
 - Compose-rendered game board;
 - instant run restart;
-- unit tests for the core rules.
+- unit tests for the core rules and deterministic presentation events.
 
-R0 closes the foundation milestone. The current focus is **R1 — Feel**: tune the loop until losing reliably makes the player want to tap **AGAIN** immediately.
+R1 is not complete yet. Entropy, Spark pressure, scoring/Combo tuning, device-size/refresh-rate testing, and frame-time/allocation profiling still require playtest or device evidence before the milestone can close.
 
 ## Android baseline
 
