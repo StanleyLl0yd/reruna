@@ -76,7 +76,9 @@ Repository and CI controls include:
 - digest-pinned workflow containers;
 - a repository script that rejects common GitHub Actions supply-chain regressions;
 - Android manifest security baseline checks for permissions, cleartext traffic, debuggable state, and exported components;
-- scheduled/manual Qodana JVM analysis as an additional non-blocking static-analysis layer.
+- scheduled/manual Qodana JVM analysis as an additional non-blocking static-analysis layer;
+- GitHub-native Dependency Review on pull requests;
+- protected `main` with strict required checks, no bypass, and verified signed commits.
 
 ## Release security
 
